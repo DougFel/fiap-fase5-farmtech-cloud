@@ -11,7 +11,7 @@ video/checagem/
 
 # renderizacoes intermediarias (o notebook .ipynb e o que vale)
 previa.html
-readme.html
+readme*.html
 
 # os videos vao para o YouTube, nao para o repositorio
 *.mp4
