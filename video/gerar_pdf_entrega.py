@@ -7,6 +7,8 @@ BASE = Path(__file__).resolve().parent.parent
 REPO = "https://github.com/DougFel/fiap-fase5-farmtech-cloud"
 VIDEO_1 = "https://youtu.be/gjgxBpAXDzs"
 VIDEO_2 = "https://youtu.be/P23q50v1mWo"
+VIDEO_3 = "https://youtu.be/4ov0sx2JYwo"
+REPO_IR_ALEM = REPO + "/tree/main/ir-alem"
 
 HTML = f"""
 <!doctype html><meta charset="utf-8">
@@ -117,9 +119,44 @@ US$ 8,27 por mês não compensa o risco jurídico nem a latência oito vezes mai
   <div class="obs">3min14s</div>
 </div>
 
+<h2>Ir Além — Opção 2: classificação da saúde da plantação</h2>
+<p>Entrega extra, sem valor de nota. Um <strong>ESP32 classifica a saúde da
+plantação sozinho</strong>: o modelo foi treinado em Python com scikit-learn e
+<strong>transpilado para C++ puro</strong>, virando parte do firmware. A placa
+não depende de servidor nem de conexão para decidir.</p>
+
+<ul>
+  <li><strong>Três sensores:</strong> DHT22 (temperatura e umidade do ar), sensor
+      capacitivo de umidade do solo e LDR — os analógicos no ADC1, porque o ADC2
+      é usado pelo rádio Wi-Fi</li>
+  <li><strong>Saídas:</strong> LED local, página HTML servida pelo próprio ESP32
+      e publicação MQTT</li>
+  <li><strong>Modelo:</strong> árvore de decisão com 89 nós, acurácia 0,676 contra
+      um teto teórico de Bayes de 0,779 — 86,8% do máximo possível</li>
+  <li><strong>Verificação:</strong> o C++ embarcado reproduz o modelo Python em
+      4.000 de 4.000 amostras; 9 testes automatizados cobrem o firmware</li>
+</ul>
+
+<p>Como também coleta dados com sensores distintos, conecta por Wi-Fi e publica
+em MQTT e em página HTML, a solução cumpre igualmente os requisitos técnicos da
+<strong>Opção 1</strong>.</p>
+
+<div class="link">
+  <div class="rot">Seção "Ir Além" no GitHub</div>
+  <a href="{REPO_IR_ALEM}">{REPO_IR_ALEM}</a>
+  <div class="obs">Firmware, modelo, testes, figura da arquitetura e documentação.</div>
+</div>
+
+<div class="link">
+  <div class="rot">Vídeo do Ir Além — não listado</div>
+  <a href="{VIDEO_3}">{VIDEO_3}</a>
+  <div class="obs">4min49s</div>
+</div>
+
 <div class="rodape">
-  Os dois vídeos estão publicados no YouTube como <em>não listados</em> e seus links
-  constam no README do repositório, conforme o enunciado.
+  Os três vídeos estão publicados no YouTube como <em>não listados</em> e seus links
+  constam no README do repositório, conforme o enunciado. O Ir Além não houve
+  execução em hardware físico — o que foi executado foram os testes automatizados.
 </div>
 """
 
