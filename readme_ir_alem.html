@@ -1,0 +1,459 @@
+<!doctype html><meta charset='utf-8'><title>FarmTech Solutions — Fase 5</title><style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  font: 16px/1.65 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1f2328; background: #fff;
+  max-width: 980px; margin: 0 auto; padding: 42px 56px 200px;
+}
+h1 { font-size: 2em; border-bottom: 1px solid #d8dee4; padding-bottom: .3em; margin-top: 1.4em; }
+h2 { font-size: 1.5em; border-bottom: 1px solid #d8dee4; padding-bottom: .3em; margin-top: 1.8em; }
+h3 { font-size: 1.22em; margin-top: 1.5em; }
+h1:first-child { margin-top: 0; }
+table { border-collapse: collapse; margin: 1.1em 0; width: 100%; font-size: .94em; }
+th, td { border: 1px solid #d0d7de; padding: 7px 13px; text-align: left; }
+th { background: #f6f8fa; font-weight: 600; }
+tr:nth-child(2n) td { background: #f6f8fa; }
+code { background: #eff1f3; padding: .2em .4em; border-radius: 6px; font-size: .88em; }
+pre { background: #f6f8fa; padding: 16px; border-radius: 8px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+img { max-width: 100%; border: 1px solid #d0d7de; border-radius: 8px; margin: .6em 0; }
+blockquote { border-left: 4px solid #d0d7de; margin: 1em 0; padding: .2em 1em; color: #59636e; }
+hr { border: 0; border-top: 1px solid #d8dee4; margin: 2.4em 0; }
+a { color: #0969da; text-decoration: none; }
+</style><h1 id="ir-alem-classificacao-da-saude-da-plantacao-com-machine-learning-e-esp32">Ir Além — Classificação da saúde da plantação com Machine Learning e ESP32</h1>
+<p><strong>FIAP · Inteligência Artificial · Fase 5 — Cap 1</strong>
+Douglas Felicio da Silva — RM 572312</p>
+<p>Entrega da <strong>Opção 2</strong> do Ir Além. Como a solução também coleta dados com dois
+sensores distintos, conecta por Wi-Fi e publica em broker MQTT e em página HTML,
+ela cumpre igualmente os requisitos técnicos da <strong>Opção 1</strong>.</p>
+<hr />
+<h2 id="a-ideia-em-uma-frase">A ideia em uma frase</h2>
+<p>Um ESP32 lê três sensores, decide sozinho se a plantação está saudável e publica
+o diagnóstico — <strong>sem depender de servidor para classificar</strong>.</p>
+<p>O modelo foi treinado em Python com scikit-learn e depois <strong>transpilado para C++
+puro</strong>, virando parte do firmware. É o que se chama de inferência na borda:
+a placa não envia dados para alguém decidir por ela; ela já decide.</p>
+<h3 id="por-que-isso-importa-no-campo">Por que isso importa no campo</h3>
+<p>Uma lavoura raramente tem Wi-Fi confiável. Se a classificação dependesse da
+nuvem, uma queda de conexão deixaria o produtor sem diagnóstico justamente
+quando o sensor detecta estresse hídrico. Com o modelo embarcado:</p>
+<ul>
+<li>o diagnóstico continua funcionando <strong>offline</strong>, acionando o alerta local;</li>
+<li>a latência é de <strong>microssegundos</strong>, não de centenas de milissegundos;</li>
+<li>o consumo de rede cai — só o resultado trafega, não o fluxo bruto de leituras.</li>
+</ul>
+<hr />
+<h2 id="arquitetura">Arquitetura</h2>
+<p><img alt="Arquitetura do sistema" src="../imagens/ir_alem_arquitetura.png" /></p>
+<pre><code>  DHT22 (GPIO 15) ─┐
+  Solo  (GPIO 34) ─┼──&gt; ESP32 ──&gt; média móvel ──&gt; árvore embarcada ──&gt; diagnóstico
+  LDR   (GPIO 35) ─┘                (10 amostras)     (C++ puro)          │
+                                                                          ├──&gt; LED verde / vermelho
+                                                                          ├──&gt; página HTML na porta 80
+                                                                          └──&gt; MQTT (broker.hivemq.com)
+</code></pre>
+<h3 id="sensores-e-por-que-estes">Sensores e por que estes</h3>
+<table>
+<thead>
+<tr>
+<th>Sensor</th>
+<th>Pino</th>
+<th>Grandeza</th>
+<th>Por que entra no modelo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DHT22</td>
+<td>GPIO 15</td>
+<td>temperatura e umidade do ar</td>
+<td>o segundo fator limitante da cultura; sensor digital, duas grandezas de uma vez</td>
+</tr>
+<tr>
+<td>Umidade do solo (capacitivo)</td>
+<td>GPIO 34</td>
+<td>% da capacidade de campo</td>
+<td><strong>o fator limitante primário</strong> — é a variável de maior peso no modelo (0,51)</td>
+</tr>
+<tr>
+<td>LDR</td>
+<td>GPIO 35</td>
+<td>luminosidade</td>
+<td>discrimina sombreamento excessivo, comum em consórcio agroflorestal</td>
+</tr>
+</tbody>
+</table>
+<h3 id="uma-decisao-de-projeto-que-evita-um-bug-dificil">Uma decisão de projeto que evita um bug difícil</h3>
+<p>Os dois sensores analógicos estão em <strong>GPIO 34 e 35, que pertencem ao ADC1</strong>.
+Isso é deliberado: o ESP32 tem dois conversores, e o <strong>ADC2 é usado internamente
+pelo rádio Wi-Fi</strong>, ficando indisponível enquanto a conexão está ativa. Como
+este projeto mantém o Wi-Fi ligado o tempo todo, ligar um sensor no ADC2
+produziria leituras erráticas — com o agravante de que o sintoma aparece só
+depois que a rede conecta, o que torna o diagnóstico difícil.</p>
+<hr />
+<h2 id="o-modelo">O modelo</h2>
+<h3 id="o-dataset-nao-veio-de-uma-regra">O dataset não veio de uma regra</h3>
+<p>O caminho fácil seria rotular "saudável" com um <code>if</code> sobre as leituras. O
+problema: o modelo treinado nesse dado apenas reaprende a regra que o gerou, e a
+acurácia alta vira ilusão. Foi exatamente esse erro que a Sprint 3 do Challenge
+Sompo nos ensinou a evitar.</p>
+<p>Aqui o rótulo sai de um processo probabilístico:</p>
+<ol>
+<li>cada grandeza contribui com um <strong>estresse contínuo</strong>, medido pela distância à
+   sua faixa fisiológica ótima;</li>
+<li>os estresses somam em <strong>log-odds</strong>, com uma interação entre seca e calor —
+   solo seco com temperatura alta castiga mais que a soma dos dois isolados;</li>
+<li>entra um <strong>fator de vigor da planta</strong> (idade, cultivar, histórico de adubação)
+   que o ESP32 <strong>não mede</strong> — e por isso vira erro irredutível;</li>
+<li>o desfecho é <strong>sorteado</strong> de uma Bernoulli.</li>
+</ol>
+<p>O resultado é uma fronteira difusa: leituras idênticas podem gerar rótulos
+diferentes, como no campo.</p>
+<p><strong>Consequência importante:</strong> existe um teto. O melhor classificador concebível —
+aquele que conhece a própria probabilidade que gerou o dado — acerta <strong>77,88%</strong>.
+Nenhum modelo pode passar disso.</p>
+<h3 id="desempenho">Desempenho</h3>
+<table>
+<thead>
+<tr>
+<th>Modelo</th>
+<th>Acurácia</th>
+<th>F1</th>
+<th>AUC</th>
+<th>Cabe no ESP32?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline (classe majoritária)</td>
+<td>0,5020</td>
+<td>0,000</td>
+<td>0,500</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Regressão Logística</td>
+<td>0,5890</td>
+<td>0,591</td>
+<td>0,632</td>
+<td>sim</td>
+</tr>
+<tr>
+<td><strong>Árvore de decisão (embarcada)</strong></td>
+<td><strong>0,6760</strong></td>
+<td><strong>0,680</strong></td>
+<td><strong>0,739</strong></td>
+<td><strong>sim</strong></td>
+</tr>
+<tr>
+<td>Random Forest (referência)</td>
+<td>0,6980</td>
+<td>0,706</td>
+<td>0,755</td>
+<td>inviável</td>
+</tr>
+<tr>
+<td><em>Teto teórico (Bayes)</em></td>
+<td><em>0,7788</em></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>A árvore embarcada alcança <strong>86,8% do máximo teoricamente possível</strong>, e fica a
+apenas 2,2 pontos do Random Forest — que precisaria de 300 árvores e não caberia
+confortavelmente no microcontrolador.</p>
+<p>Reportar "acurácia de 67,6%" sem o teto de 77,9% ao lado seria enganoso nos dois
+sentidos: parece pouco, mas é quase tudo o que estes sensores permitem extrair.</p>
+<h3 id="o-que-o-modelo-aprendeu">O que o modelo aprendeu</h3>
+<table>
+<thead>
+<tr>
+<th>Grandeza</th>
+<th>Importância</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>umidade do solo</td>
+<td>0,513</td>
+</tr>
+<tr>
+<td>temperatura</td>
+<td>0,378</td>
+</tr>
+<tr>
+<td>umidade do ar</td>
+<td>0,092</td>
+</tr>
+<tr>
+<td>luminosidade</td>
+<td>0,016</td>
+</tr>
+</tbody>
+</table>
+<p>A ordem reproduz a agronomia: água e temperatura são os fatores limitantes
+primários. O modelo chegou nisso sozinho — não foi imposto.</p>
+<h3 id="da-arvore-ao-firmware">Da árvore ao firmware</h3>
+<p>O <code>treinar.py</code> percorre a estrutura interna do sklearn e emite C++: cada nó
+interno vira um <code>if</code>, cada folha vira o retorno da classe com a confiança medida
+naquela folha.</p>
+<pre><code class="language-cpp">inline Diagnostico classificarSaude(const Leitura&amp; leitura) {
+    if (leitura.umidade_solo &lt;= 31.8163f) {
+      if (leitura.temperatura &lt;= 33.3169f) {
+        ...
+        return { NAO_SAUDAVEL, 0.7143f };
+</code></pre>
+<p>São <strong>89 nós e 45 folhas</strong>, em 222 linhas de C++ — alguns KB dos 4 MB de flash.
+Sem alocação de memória, sem biblioteca, sem ponto flutuante de dupla precisão.</p>
+<h3 id="a-transpilacao-foi-verificada-nao-presumida">A transpilação foi verificada, não presumida</h3>
+<p>Transpilar um modelo só vale se a versão embarcada for <strong>fiel</strong> à original. O
+<code>validar_transpilacao.py</code> compila o header com um <code>main</code> de teste, passa as
+4.000 amostras do dataset pelas duas implementações e exige concordância total:</p>
+<pre><code>Compilação do header: OK
+Amostras testadas   : 4000
+Divergências        : 0
+
+O C++ embarcado reproduz o modelo Python em 100% das amostras.
+</code></pre>
+<hr />
+<h2 id="o-firmware">O firmware</h2>
+<p>Além da inferência, o firmware aplica de forma explícita o conteúdo dos
+capítulos da fase:</p>
+<table>
+<thead>
+<tr>
+<th>Recurso</th>
+<th>Onde está</th>
+<th>Capítulo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Média móvel de 10 amostras</td>
+<td><code>mediaBuffer()</code> — elimina o ruído do ADC</td>
+<td>Cap 6</td>
+</tr>
+<tr>
+<td>ADC1 para analógicos com Wi-Fi ativo</td>
+<td>GPIO 34 e 35</td>
+<td>Cap 6</td>
+</tr>
+<tr>
+<td>Resolução de 12 bits e atenuação de 11 dB</td>
+<td><code>analogReadResolution()</code> / <code>analogSetAttenuation()</code></td>
+<td>Cap 6</td>
+</tr>
+<tr>
+<td><code>attachInterrupt()</code> no botão</td>
+<td>leitura sob demanda</td>
+<td>Cap 7</td>
+</tr>
+<tr>
+<td><code>millis()</code> para debounce</td>
+<td>evita repique mecânico</td>
+<td>Cap 7</td>
+</tr>
+<tr>
+<td><code>IRAM_ATTR</code> e <code>volatile</code> na ISR</td>
+<td>corretude da interrupção</td>
+<td>Cap 7</td>
+</tr>
+<tr>
+<td>Wi-Fi em modo estação</td>
+<td><code>WiFi.mode(WIFI_STA)</code></td>
+<td>Cap 7</td>
+</tr>
+<tr>
+<td>MQTT (publicação)</td>
+<td><code>PubSubClient</code></td>
+<td>Cap 7</td>
+</tr>
+<tr>
+<td>Servidor HTTP embarcado</td>
+<td>página de status na porta 80</td>
+<td>Cap 7</td>
+</tr>
+</tbody>
+</table>
+<h3 id="o-diagnostico-explica-a-causa">O diagnóstico explica a causa</h3>
+<p>Dizer "não saudável" não ajuda ninguém. A função <code>causaProvavel()</code> aponta qual
+grandeza puxou o resultado, combinando <strong>dois</strong> fatores:</p>
+<pre><code>desvio normalizado pela largura da faixa  ×  importância da grandeza no modelo
+</code></pre>
+<p>A normalização torna grandezas de escalas diferentes comparáveis; a importância
+— exportada junto com a árvore — garante que a explicação aponte o que
+realmente moveu a decisão.</p>
+<pre><code>solo  8.0% | temp 39.0C | ar 25.0% | luz 54.0%  -&gt;  NAO SAUDAVEL
+(conf. 100%, 7us) | umidade do solo abaixo da faixa ideal
+</code></pre>
+<p><strong>Este ponto surgiu de um teste que falhou.</strong> Na primeira versão o critério era
+só o desvio normalizado, e o caso acima culpava a <em>umidade do ar</em> — cujo desvio
+relativo é maior (1,40 contra 1,23 do solo). Mas quem decide ali é o solo, que
+vale <strong>0,513</strong> no modelo contra <strong>0,092</strong> do ar. A ponderação corrigiu isso.</p>
+<h3 id="testes-automatizados-do-firmware">Testes automatizados do firmware</h3>
+<p>O firmware é compilado num PC contra stubs das APIs Arduino
+(<code>testes/stubs_arduino.h</code>) e exercitado em cenários de campo. Não substitui o
+teste em hardware — mas pega erros de tipo, chamada e lógica, que são os que
+custam caro quando descobertos só na hora de gravar a placa.</p>
+<pre><code class="language-bash">cd testes
+c++ -std=c++17 -I../firmware -I. -x c++ testar_firmware.cpp -o teste &amp;&amp; ./teste
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Verificação</th>
+<th>O que prova</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setup()</code> executa sem travar</td>
+<td>inicialização de sensores, Wi-Fi, MQTT e HTTP</td>
+</tr>
+<tr>
+<td>média móvel preenchida no boot</td>
+<td>não há diagnóstico baseado em amostra única</td>
+</tr>
+<tr>
+<td>pico isolado desloca a média &lt; 8 pontos</td>
+<td>a suavização funciona</td>
+</tr>
+<tr>
+<td>repique de 40 ms é descartado</td>
+<td>o debounce da interrupção protege</td>
+</tr>
+<tr>
+<td>toque após 250 ms é aceito</td>
+<td>o debounce não bloqueia o uso legítimo</td>
+</tr>
+<tr>
+<td>condição ótima → saudável</td>
+<td>o modelo responde na direção certa</td>
+</tr>
+<tr>
+<td>seca severa com calor → não saudável</td>
+<td>idem, no extremo oposto</td>
+</tr>
+<tr>
+<td>confiança dentro de [0, 1]</td>
+<td>a transpilação não corrompeu as folhas</td>
+</tr>
+<tr>
+<td>na seca, aponta o solo</td>
+<td>a explicação ponderada está correta</td>
+</tr>
+</tbody>
+</table>
+<p>Um detalhe visível no log: conforme o solo seca de 54,8% para 8%, a confiança
+sobe de <strong>0,551 → 0,911 → 1,000</strong> e a causa migra de "temperatura acima da
+faixa" para "umidade do solo abaixo da faixa". O sistema não só troca o
+veredito — ele muda de opinião sobre o motivo, na ordem certa.</p>
+<h3 id="topicos-mqtt">Tópicos MQTT</h3>
+<table>
+<thead>
+<tr>
+<th>Tópico</th>
+<th>Quando publica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>farmtech/rm572312/leitura</code></td>
+<td>a cada ciclo — leituras já suavizadas</td>
+</tr>
+<tr>
+<td><code>farmtech/rm572312/diagnostico</code></td>
+<td>a cada ciclo — classe, confiança e causa</td>
+</tr>
+<tr>
+<td><code>farmtech/rm572312/alerta</code></td>
+<td><strong>só quando não saudável</strong> — evita poluir o tópico</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="como-rodar">Como rodar</h2>
+<h3 id="no-wokwi-sem-hardware">No Wokwi (sem hardware)</h3>
+<ol>
+<li>Abra <a href="https://wokwi.com/projects/new/esp32">wokwi.com/projects/new/esp32</a></li>
+<li>Cole <code>firmware/diagram.json</code> na aba <code>diagram.json</code></li>
+<li>Cole <code>firmware/farmtech_esp32.ino</code> na aba <code>sketch.ino</code>, substituindo a linha
+   <code>#include "modelo_embarcado.h"</code> pelo conteúdo do header (o Wokwi gratuito não
+   cria arquivos adicionais)</li>
+<li>No Library Manager, adicione <code>DHT sensor library</code> e <code>PubSubClient</code></li>
+<li>Rode. Gire o potenciômetro para simular a umidade do solo e veja o LED trocar.</li>
+</ol>
+<h3 id="em-esp32-fisico">Em ESP32 físico</h3>
+<pre><code class="language-bash"># bibliotecas
+arduino-cli lib install &quot;DHT sensor library&quot; &quot;PubSubClient&quot;
+
+# compilar e gravar
+arduino-cli compile --fqbn esp32:esp32:esp32 firmware/
+arduino-cli upload  --fqbn esp32:esp32:esp32 -p /dev/cu.SLAB_USBtoUART firmware/
+</code></pre>
+<p>Ajuste <code>WIFI_SSID</code> e <code>WIFI_SENHA</code> no início do <code>.ino</code>. Depois de conectar, o
+endereço IP aparece no monitor serial e a página de status responde nele.</p>
+<h3 id="retreinar-o-modelo">Retreinar o modelo</h3>
+<pre><code class="language-bash">python modelo/gerar_dataset.py        # gera o dataset
+python modelo/treinar.py              # treina e regenera modelo_embarcado.h
+python modelo/validar_transpilacao.py # prova que o C++ = Python
+</code></pre>
+<p>O header é <strong>gerado</strong>, não escrito à mão. Alterar os pesos ou as faixas em
+<code>gerar_dataset.py</code> e rodar os três comandos produz um firmware novo e coerente.</p>
+<hr />
+<h2 id="estrutura">Estrutura</h2>
+<pre><code>ir-alem/
+├── README.md                        este documento
+├── firmware/
+│   ├── farmtech_esp32.ino           firmware principal
+│   ├── modelo_embarcado.h           árvore transpilada (GERADO)
+│   ├── diagram.json                 circuito do Wokwi
+│   └── libraries.txt                dependências
+└── modelo/
+    ├── gerar_dataset.py             dataset com rótulo probabilístico
+    ├── treinar.py                   treino, comparação e transpilação
+    ├── validar_transpilacao.py      prova de fidelidade C++ ↔ Python
+    ├── metricas.json                resultados medidos
+    └── dataset_info.json            faixas, pesos e teto de Bayes
+</code></pre>
+<hr />
+<h2 id="limitacoes-e-elas-sao-reais">Limitações — e elas são reais</h2>
+<ol>
+<li><strong>Não houve execução em hardware físico.</strong> O firmware é o mesmo que roda numa
+   placa real e está pronto para gravação, mas o que foi de fato executado
+   foram os testes automatizados num PC (<code>testes/</code>), não a placa.</li>
+</ol>
+<p>No Wokwi, o circuito monta corretamente e o projeto foi carregado, mas as
+   duas tentativas de compilar caíram em <em>"Build Servers Busy"</em> — os servidores
+   de build gratuitos estavam saturados no momento. Isso é limitação de
+   infraestrutura do simulador, não do código: o mesmo firmware compila sem
+   erros nem avisos com <code>c++ -std=c++17</code> contra os stubs.</p>
+<p>Para reproduzir no Wokwi, siga as instruções da seção <em>Como rodar</em>.</p>
+<ol>
+<li>
+<p><strong>O dataset é sintético.</strong> As faixas fisiológicas vêm da literatura
+   agronômica, e o processo gerador foi construído para não ser trivialmente
+   aprendível — mas continua sendo um modelo do mundo, não o mundo. Com dados
+   reais de uma safra, os limiares mudariam.</p>
+</li>
+<li>
+<p><strong>Teto de 77,9% de acurácia.</strong> Não é limitação do algoritmo: é o efeito do
+   vigor da planta, que nenhum dos três sensores mede. Para subir esse teto seria
+   preciso outro sensor — NDVI por imagem, por exemplo — e não outro modelo.</p>
+</li>
+<li>
+<p><strong>O broker MQTT é público.</strong> <code>broker.hivemq.com</code> serve para demonstração;
+   uma operação real exige broker autenticado e TLS.</p>
+</li>
+<li>
+<p><strong>Sem persistência a bordo.</strong> Se o Wi-Fi cair, o diagnóstico continua local,
+   mas as leituras daquele período se perdem. O passo natural seria um buffer em
+   SPIFFS com reenvio ao reconectar.</p>
+</li>
+</ol>
+<hr />
+<h2 id="video">🎥 Vídeo</h2>
+<p><strong>▶️ <a href="VIDEO_IR_ALEM_URL">Assistir no YouTube</a></strong> — não listado, até 5 minutos</p>

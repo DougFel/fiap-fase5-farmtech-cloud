@@ -150,7 +150,7 @@ def montar_trilha(numero: int, blocos: list[dict], total: float) -> Path:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Produz os vídeos da Fase 5")
-    p.add_argument("numero", type=int, choices=[1, 2])
+    p.add_argument("numero", type=int, choices=[1, 2, 3])
     p.add_argument("--voz", default="Luciana")
     p.add_argument("--ppm", type=int, default=178)
     p.add_argument("--audio", type=Path, help="usa esta gravação em vez de sintetizar")

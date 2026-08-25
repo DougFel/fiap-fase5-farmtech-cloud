@@ -31,17 +31,21 @@ a { color: #0969da; text-decoration: none; }
 """
 
 
-def montar() -> Path:
-    texto = (BASE / "README.md").read_text(encoding="utf-8")
+def montar(origem: str = "README.md", destino_nome: str = "readme.html") -> Path:
+    texto = (BASE / origem).read_text(encoding="utf-8")
     corpo = markdown.markdown(texto, extensions=["tables", "fenced_code", "toc"])
     html = (f"<!doctype html><meta charset='utf-8'>"
             f"<title>FarmTech Solutions — Fase 5</title>"
             f"<style>{ESTILO}</style>{corpo}")
-    destino = BASE / "readme.html"
+    destino = BASE / destino_nome
     destino.write_text(html, encoding="utf-8")
     return destino
 
 
 if __name__ == "__main__":
-    d = montar()
+    import sys
+    if len(sys.argv) > 2:
+        d = montar(sys.argv[1], sys.argv[2])
+    else:
+        d = montar()
     print(f"{d.name}: {d.stat().st_size / 1024:.0f} KB")

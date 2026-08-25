@@ -15,6 +15,7 @@ quatro produtos. O trabalho tem duas entregas:
 |---|---|---|
 | **1** | Modelos de Machine Learning para prever o rendimento de safra | [`notebook/DouglasFelicioDaSilva_rm572312_pbl_fase4.ipynb`](notebook/DouglasFelicioDaSilva_rm572312_pbl_fase4.ipynb) |
 | **2** | Estimativa de custo de infraestrutura na AWS | [seção abaixo](#entrega-2--onde-hospedar-o-modelo) |
+| **Ir Além** | Classificação da saúde da plantação com ML embarcado no ESP32 | [`ir-alem/`](ir-alem/) |
 
 Os dois vídeos de demonstração estão linkados em cada seção.
 

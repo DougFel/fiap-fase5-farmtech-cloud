@@ -290,9 +290,17 @@ ir-alem/
 
 ## Limitações — e elas são reais
 
-1. **A execução foi simulada no Wokwi**, não em placa física. O firmware é o
-   mesmo que roda em hardware real e está pronto para gravação, mas não houve
-   validação com sensores reais em campo.
+1. **Não houve execução em hardware físico.** O firmware é o mesmo que roda numa
+   placa real e está pronto para gravação, mas o que foi de fato executado
+   foram os testes automatizados num PC (`testes/`), não a placa.
+
+   No Wokwi, o circuito monta corretamente e o projeto foi carregado, mas as
+   duas tentativas de compilar caíram em *"Build Servers Busy"* — os servidores
+   de build gratuitos estavam saturados no momento. Isso é limitação de
+   infraestrutura do simulador, não do código: o mesmo firmware compila sem
+   erros nem avisos com `c++ -std=c++17` contra os stubs.
+
+   Para reproduzir no Wokwi, siga as instruções da seção *Como rodar*.
 
 2. **O dataset é sintético.** As faixas fisiológicas vêm da literatura
    agronômica, e o processo gerador foi construído para não ser trivialmente
@@ -314,4 +322,4 @@ ir-alem/
 
 ## 🎥 Vídeo
 
-**▶️ [Assistir no YouTube](VIDEO_IR_ALEM_URL)** — não listado, até 5 minutos
+**▶️ [Assistir no YouTube](https://youtu.be/4ov0sx2JYwo)** — 4min49s, não listado

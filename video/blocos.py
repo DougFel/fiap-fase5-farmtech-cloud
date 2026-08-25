@@ -151,5 +151,7 @@ Obrigado.
 """),
 ]
 
-VIDEOS = {1: VIDEO_1, 2: VIDEO_2}
-PAGINA = {1: "previa.html", 2: "readme.html"}
+from blocos_ir_alem import VIDEO_3
+
+VIDEOS = {1: VIDEO_1, 2: VIDEO_2, 3: VIDEO_3}
+PAGINA = {1: "previa.html", 2: "readme.html", 3: "readme_ir_alem.html"}
