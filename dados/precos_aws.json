@@ -1,0 +1,30 @@
+[
+  {
+    "regiao": "us-east-1",
+    "nome": "Virgínia do Norte (EUA)",
+    "hora_usd": 0.0104,
+    "vcpu": "2",
+    "memoria": "1 GiB",
+    "rede": "Up to 5 Gigabit",
+    "processador": "Intel Skylake E5 2686 v5",
+    "disco_gb_mes_usd": 0.08,
+    "computacao_mes": 7.592,
+    "armazenamento_mes": 4.0,
+    "total_mes": 11.591999999999999,
+    "total_ano": 139.10399999999998
+  },
+  {
+    "regiao": "sa-east-1",
+    "nome": "São Paulo (BR)",
+    "hora_usd": 0.0168,
+    "vcpu": "2",
+    "memoria": "1 GiB",
+    "rede": "Up to 5 Gigabit",
+    "processador": "Intel Skylake E5 2686 v5",
+    "disco_gb_mes_usd": 0.152,
+    "computacao_mes": 12.264,
+    "armazenamento_mes": 7.6,
+    "total_mes": 19.863999999999997,
+    "total_ano": 238.36799999999997
+  }
+]

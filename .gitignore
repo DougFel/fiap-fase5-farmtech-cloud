@@ -1,0 +1,30 @@
+# ambiente
+.venv/
+__pycache__/
+*.pyc
+
+# arquivos de trabalho da producao dos videos
+video/.trabalho/
+video/captura/
+video/checagem/
+.playwright-mcp/
+
+# renderizacoes intermediarias (o notebook .ipynb e o que vale)
+previa.html
+readme.html
+
+# os videos vao para o YouTube, nao para o repositorio
+*.mp4
+*.webm
+
+# rascunhos de prospecção: serviram para levantar os números antes de escrever o
+# notebook, e a análise final ja esta toda dentro dele
+dados/explorar.py
+dados/prospectar.py
+dados/prospectar2.py
+
+# conferencia interna do grupo, nao faz parte da entrega
+CONFERENCIA.md
+
+# macOS
+.DS_Store
