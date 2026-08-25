@@ -124,23 +124,37 @@ float lerLuminosidade() {
 }
 
 /*
- * Explica o diagnostico: aponta a grandeza mais distante da faixa otima.
+ * Explica o diagnostico: aponta a grandeza que mais pesou no resultado.
  *
  * Sem isso o operador recebe apenas "nao saudavel" e nao sabe o que fazer. Com
- * isso ele recebe "nao saudavel — umidade do solo em 12%, abaixo da faixa".
+ * isso ele recebe "nao saudavel — umidade do solo abaixo da faixa ideal".
+ *
+ * O criterio combina DOIS fatores, e nao so o desvio:
+ *
+ *   desvio normalizado x importancia da grandeza no modelo
+ *
+ * A normalizacao pela largura da faixa torna grandezas de escalas diferentes
+ * comparaveis. A importancia — exportada junto com a arvore — garante que a
+ * explicacao aponte o que realmente moveu a decisao.
+ *
+ * Sem o peso, um caso como (solo 8%, ar 25%) culparia a umidade do ar, cujo
+ * desvio relativo e maior; mas quem decide ali e o solo, que vale cinco vezes
+ * mais para o modelo. Esse caso foi encontrado pelos testes automatizados.
  */
 String causaProvavel(const Leitura& l) {
   float valores[] = {l.umidade_solo, l.temperatura, l.umidade_ar, l.luminosidade};
-  float piorDesvio = 0;
+  float piorPontuacao = 0;
   int pior = -1;
 
   for (int i = 0; i < 4; i++) {
     float desvio = 0;
     if (valores[i] < FAIXAS[i].mmin) desvio = FAIXAS[i].mmin - valores[i];
     else if (valores[i] > FAIXAS[i].mmax) desvio = valores[i] - FAIXAS[i].mmax;
-    // Normaliza pela largura da faixa para comparar grandezas de escalas diferentes.
-    desvio /= (FAIXAS[i].mmax - FAIXAS[i].mmin);
-    if (desvio > piorDesvio) { piorDesvio = desvio; pior = i; }
+
+    desvio /= (FAIXAS[i].mmax - FAIXAS[i].mmin);   // comparavel entre escalas
+    float pontuacao = desvio * FAIXAS[i].peso;      // ponderado pelo modelo
+
+    if (pontuacao > piorPontuacao) { piorPontuacao = pontuacao; pior = i; }
   }
 
   if (pior < 0) return "todas as grandezas dentro da faixa";

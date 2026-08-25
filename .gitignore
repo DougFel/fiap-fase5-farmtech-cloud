@@ -31,3 +31,4 @@ CONFERENCIA.md
 
 # dataset gerado do Ir Alem (reproduzivel via modelo/gerar_dataset.py)
 ir-alem/modelo/saude_plantacao.csv
+ir-alem/testes/teste

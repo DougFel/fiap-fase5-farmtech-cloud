@@ -144,8 +144,10 @@ folhas = int((arvore.tree_.children_left == -1).sum())
 # As faixas ótimas vão para o header para que o firmware consiga explicar ao
 # operador qual grandeza está fora do lugar, e não só o veredito.
 faixas = info["faixas_otimas"]
+importancias = dict(zip(GRANDEZAS, arvore.feature_importances_))
 linhas_faixa = "\n".join(
-    f'  {{ "{rotulo}", {faixas[chave][0]:.1f}f, {faixas[chave][1]:.1f}f }},'
+    f'  {{ "{rotulo}", {faixas[chave][0]:.1f}f, {faixas[chave][1]:.1f}f, '
+    f'{importancias[chave]:.4f}f }},'
     for chave, rotulo in [("umidade_solo", "umidade do solo"),
                           ("temperatura", "temperatura"),
                           ("umidade_ar", "umidade do ar"),
@@ -184,7 +186,13 @@ struct Diagnostico {{
 }};
 
 // Faixas fisiologicas otimas, usadas para explicar o diagnostico ao operador.
-struct Faixa {{ const char* nome; float mmin; float mmax; }};
+//
+// O campo `peso` e a importancia que a arvore treinada atribuiu aquela grandeza.
+// Sem ele, a explicacao apontaria a variavel proporcionalmente mais fora da
+// faixa — que nem sempre e a que pesou na decisao. Exemplo real observado nos
+// testes: com solo a 8% e ar a 25%, o desvio normalizado do ar e maior, mas
+// quem determina o diagnostico e o solo, que vale 5x mais no modelo.
+struct Faixa {{ const char* nome; float mmin; float mmax; float peso; }};
 
 static const Faixa FAIXAS[] = {{
 {linhas_faixa}

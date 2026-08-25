@@ -30,13 +30,19 @@ struct Diagnostico {
 };
 
 // Faixas fisiologicas otimas, usadas para explicar o diagnostico ao operador.
-struct Faixa { const char* nome; float mmin; float mmax; };
+//
+// O campo `peso` e a importancia que a arvore treinada atribuiu aquela grandeza.
+// Sem ele, a explicacao apontaria a variavel proporcionalmente mais fora da
+// faixa — que nem sempre e a que pesou na decisao. Exemplo real observado nos
+// testes: com solo a 8% e ar a 25%, o desvio normalizado do ar e maior, mas
+// quem determina o diagnostico e o solo, que vale 5x mais no modelo.
+struct Faixa { const char* nome; float mmin; float mmax; float peso; };
 
 static const Faixa FAIXAS[] = {
-  { "umidade do solo", 45.0f, 75.0f },
-  { "temperatura", 18.0f, 28.0f },
-  { "umidade do ar", 60.0f, 85.0f },
-  { "luminosidade", 30.0f, 80.0f },
+  { "umidade do solo", 45.0f, 75.0f, 0.5135f },
+  { "temperatura", 18.0f, 28.0f, 0.3783f },
+  { "umidade do ar", 60.0f, 85.0f, 0.0921f },
+  { "luminosidade", 30.0f, 80.0f, 0.0161f },
 };
 
 inline Diagnostico classificarSaude(const Leitura& leitura) {
