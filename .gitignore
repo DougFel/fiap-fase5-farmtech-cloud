@@ -28,3 +28,6 @@ CONFERENCIA.md
 
 # macOS
 .DS_Store
+
+# dataset gerado do Ir Alem (reproduzivel via modelo/gerar_dataset.py)
+ir-alem/modelo/saude_plantacao.csv

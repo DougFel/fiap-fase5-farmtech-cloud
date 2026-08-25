@@ -1,0 +1,44 @@
+{
+  "profundidade": 6,
+  "nos": 89,
+  "folhas": 45,
+  "teto_bayes": 0.7788,
+  "modelos": {
+    "Baseline (classe majoritária)": {
+      "acuracia": 0.502,
+      "f1": 0.0,
+      "auc": 0.5
+    },
+    "Regressão Logística": {
+      "acuracia": 0.589,
+      "f1": 0.591,
+      "auc": 0.6315
+    },
+    "Árvore (embarcada)": {
+      "acuracia": 0.676,
+      "f1": 0.6798,
+      "auc": 0.7389
+    },
+    "Random Forest (referência)": {
+      "acuracia": 0.698,
+      "f1": 0.7062,
+      "auc": 0.7546
+    }
+  },
+  "importancias": {
+    "umidade_solo": 0.5135,
+    "temperatura": 0.3783,
+    "umidade_ar": 0.0921,
+    "luminosidade": 0.0161
+  },
+  "matriz_confusao": [
+    [
+      332,
+      170
+    ],
+    [
+      154,
+      344
+    ]
+  ]
+}

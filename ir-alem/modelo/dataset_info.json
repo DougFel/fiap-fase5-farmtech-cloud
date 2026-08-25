@@ -1,0 +1,30 @@
+{
+  "amostras": 4000,
+  "saudaveis": 1992,
+  "proporcao_saudavel": 0.498,
+  "teto_bayes": 0.7788,
+  "faixas_otimas": {
+    "umidade_solo": [
+      45.0,
+      75.0
+    ],
+    "temperatura": [
+      18.0,
+      28.0
+    ],
+    "umidade_ar": [
+      60.0,
+      85.0
+    ],
+    "luminosidade": [
+      30.0,
+      80.0
+    ]
+  },
+  "pesos": {
+    "umidade_solo": 2.6,
+    "temperatura": 1.7,
+    "umidade_ar": 1.0,
+    "luminosidade": 0.9
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "author": "Douglas Felicio da Silva - RM 572312",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht",
+      "top": -110,
+      "left": 200,
+      "attrs": { "temperature": "24.5", "humidity": "72" }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "solo",
+      "top": 60,
+      "left": 210,
+      "attrs": { "value": "60" }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr",
+      "top": 190,
+      "left": 205,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledVerde",
+      "top": -60,
+      "left": -140,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledVermelho",
+      "top": 10,
+      "left": -140,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rVerde",
+      "top": -60,
+      "left": -60,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rVermelho",
+      "top": 10,
+      "left": -60,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "botao",
+      "top": 120,
+      "left": -150,
+      "attrs": { "color": "blue", "label": "ler agora" }
+    }
+  ],
+  "connections": [
+    [ "esp:3V3", "dht:VCC", "red", [ "h10", "v-40" ] ],
+    [ "esp:GND.1", "dht:GND", "black", [ "h16", "v-30" ] ],
+    [ "esp:15", "dht:SDA", "green", [ "h8", "v-20" ] ],
+
+    [ "esp:3V3", "solo:VCC", "red", [ "h20", "v20" ] ],
+    [ "esp:GND.1", "solo:GND", "black", [ "h24", "v26" ] ],
+    [ "esp:34", "solo:SIG", "orange", [ "h12", "v14" ] ],
+
+    [ "esp:3V3", "ldr:VCC", "red", [ "h28", "v120" ] ],
+    [ "esp:GND.1", "ldr:GND", "black", [ "h32", "v126" ] ],
+    [ "esp:35", "ldr:AO", "gold", [ "h14", "v110" ] ],
+
+    [ "esp:26", "rVerde:1", "green", [ "h-20", "v-10" ] ],
+    [ "rVerde:2", "ledVerde:A", "green", [ "h-10" ] ],
+    [ "ledVerde:C", "esp:GND.2", "black", [ "h-20", "v40" ] ],
+
+    [ "esp:27", "rVermelho:1", "red", [ "h-20", "v10" ] ],
+    [ "rVermelho:2", "ledVermelho:A", "red", [ "h-10" ] ],
+    [ "ledVermelho:C", "esp:GND.2", "black", [ "h-20", "v30" ] ],
+
+    [ "esp:18", "botao:1.l", "blue", [ "h-30", "v60" ] ],
+    [ "botao:2.l", "esp:GND.2", "black", [ "h-10", "v20" ] ]
+  ],
+  "dependencies": {}
+}

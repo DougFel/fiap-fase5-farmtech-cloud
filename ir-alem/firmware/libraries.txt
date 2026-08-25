@@ -1,0 +1,6 @@
+# Bibliotecas usadas pelo firmware (formato do Wokwi)
+# No Arduino IDE, instale as duas primeiras pelo Gerenciador de Bibliotecas.
+
+DHT sensor library
+Adafruit Unified Sensor
+PubSubClient
