@@ -113,7 +113,11 @@ adubação, cultivar), que é onde provavelmente está a explicação que falta.
 
 ## 🎥 Vídeo da Entrega 1
 
-**[Assistir no YouTube](VIDEO_1_URL)** *(não listado, até 5 minutos)*
+**▶️ [Assistir no YouTube](https://youtu.be/T0pdtWpOD3Q)** — 4min49s, não listado
+
+O vídeo percorre o notebook do início ao fim: o problema, a estrutura da base, a
+descoberta do clima compartilhado, a clusterização, os outliers, os cinco
+modelos e a comparação com o baseline.
 
 ---
 
@@ -248,7 +252,11 @@ híbrida, não como escolha para a API de ingestão.
 
 ## 🎥 Vídeo da Entrega 2
 
-**[Assistir no YouTube](VIDEO_2_URL)** *(não listado, até 5 minutos)*
+**▶️ [Assistir no YouTube](https://youtu.be/MWdWEziCY5Q)** — 3min14s, não listado
+
+O vídeo mostra a escolha da instância, a comparação de custos entre as duas
+regiões na calculadora da AWS — incluindo a troca da estratégia de preço para
+On-Demand — e a justificativa da decisão por latência e LGPD.
 
 ---
 
